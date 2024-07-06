@@ -1,6 +1,7 @@
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -9,15 +10,17 @@ public class BoardServer {
     public static final int PORT = 12345;
     private ServerSocket serverSocket;
     private List<PlayersSocketServer> clientes = new ArrayList<PlayersSocketServer>();
-    private List<String> userNames = new CopyOnWriteArrayList<>();
+    private List<String> characters = Arrays.asList("Leah", "Abigail", "Sam", "Sebastian");
+    // salva os personagens escolhidos por cada jogador
+    private List<String> chosenCharacters = new ArrayList<>(Arrays.asList(null, null));
 
     public void start() throws IOException {
         serverSocket = new ServerSocket(PORT);
         System.out.println("Servidor iniciado na porta: " + PORT);
-        esperarConexoes();
+        waitConnections();
     }
 
-    public void esperarConexoes() throws IOException {
+    public void waitConnections() throws IOException {
         while(true) {
             PlayersSocketServer socket = new PlayersSocketServer(serverSocket.accept());
             System.out.println("Cliente: " + socket.getRemoteSocketAddress() + " conectado!");
@@ -25,27 +28,27 @@ public class BoardServer {
             Runnable runnable = new Runnable() {
                 @Override
                 public void run() {
-                    esperarMensagens(socket);
+                    waitMessages(socket);
                 }
             };
             new Thread(runnable).start();
         }
     }
 
-    public void esperarMensagens(PlayersSocketServer socket) {
+    public void waitMessages(PlayersSocketServer socket) {
         try {
             String question = "";
             while ((question = socket.receiveQuestion()) != null) {
                 System.out.println("Mensagem recebida do cliente " +
                         socket.getRemoteSocketAddress() + " > " + question);
-                enviarMensagemParaTodosClientes(socket, question);
+                sendMessagesForAll(socket, question);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public void enviarMensagemParaTodosClientes(PlayersSocketServer cliente, String question) {
+    public void sendMessagesForAll(PlayersSocketServer cliente, String question) {
         for (PlayersSocketServer socket : clientes) {
             if (!cliente.equals(socket)) {
                 socket.sendQuestion(question);
