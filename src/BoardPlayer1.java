@@ -64,6 +64,7 @@ public class BoardPlayer1 implements Runnable {
         switch (action) {
             case 1:
                 lowerCharacter();
+                sendQuestion();
                 break;
             case 2:
                 guessCharacter();
@@ -75,21 +76,6 @@ public class BoardPlayer1 implements Runnable {
                 System.out.println("Opção inválida. Tente novamente.");
                 playerAction();
         }
-
-        sendQuestion();
-    }
-
-    public void guessCharacter() {
-        System.out.println("\nPersonagens disponíveis no tabuleiro:");
-        for (int i = 0; i < onBoardCharacters.size(); i++) {
-            System.out.println((i + 1) + ". " + onBoardCharacters.get(i));
-        }
-        System.out.println("\nInsira o número do personagem para realizar o palpite: ");
-        int choice = scanner.nextInt();
-        scanner.nextLine();
-        String guessedCharacter = onBoardCharacters.get(choice - 1);
-        playersSocketServer.sendQuestion("Palpite: " + guessedCharacter);
-        System.out.println("Esperando resposta do adversário...");
     }
     public void lowerCharacter() {
         while (true) {
@@ -108,6 +94,19 @@ public class BoardPlayer1 implements Runnable {
                 System.out.println("Personagem inválido. Tente novamente.");
             }
         }
+    }
+
+    public void guessCharacter() {
+        System.out.println("\nPersonagens disponíveis no tabuleiro:");
+        for (int i = 0; i < onBoardCharacters.size(); i++) {
+            System.out.println((i + 1) + ". " + onBoardCharacters.get(i));
+        }
+        System.out.println("\nInsira o número do personagem para realizar o palpite: ");
+        int choice = scanner.nextInt();
+        scanner.nextLine();
+        String guessedCharacter = onBoardCharacters.get(choice - 1);
+        playersSocketServer.sendQuestion(guessedCharacter);
+        System.out.println("Esperando resposta do adversário...");
     }
 
     public static void main(String[] args) {
