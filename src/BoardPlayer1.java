@@ -1,5 +1,7 @@
 import java.io.IOException;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 public class BoardPlayer1 implements Runnable {
@@ -10,6 +12,7 @@ public class BoardPlayer1 implements Runnable {
     private boolean isMyTurn = true;
     private boolean hasAskedQuestion = false;
     private boolean hasReceivedAnswer = false;
+    private List<String> onBoardCharacters = new ArrayList<>(List.of("Leah", "Abigail", "Sam", "Sebastian", "Robin", "Alex", "Junimo", "Prefeito Luis"));
 
     public void start() throws IOException {
         playersSocketServer = new PlayersSocketServer(new Socket(HOST, BoardServer.PORT));
@@ -51,7 +54,60 @@ public class BoardPlayer1 implements Runnable {
 
     public void playerAction() {
         System.out.println("Você recebeu uma resposta do outro jogador. Escolha uma ação.");
-        hasReceivedAnswer = false;
+        System.out.println("\n" +
+                "\n1. Abaixar personagem" +
+                "\n2. Dar palpite" +
+                "\n3. Não fazer nada");
+        int action = scanner.nextInt();
+        scanner.nextLine();
+
+        switch (action) {
+            case 1:
+                lowerCharacter();
+                break;
+            case 2:
+                guessCharacter();
+                break;
+            case 3:
+                System.out.println("Você optou por não fazer nada nesta rodada.");
+                break;
+            default:
+                System.out.println("Opção inválida. Tente novamente.");
+                playerAction();
+        }
+
+        sendQuestion();
+    }
+
+    public void guessCharacter() {
+        System.out.println("\nPersonagens disponíveis no tabuleiro:");
+        for (int i = 0; i < onBoardCharacters.size(); i++) {
+            System.out.println((i + 1) + ". " + onBoardCharacters.get(i));
+        }
+        System.out.println("\nInsira o número do personagem para realizar o palpite: ");
+        int choice = scanner.nextInt();
+        scanner.nextLine();
+        String guessedCharacter = onBoardCharacters.get(choice - 1);
+        playersSocketServer.sendQuestion("Palpite: " + guessedCharacter);
+        System.out.println("Esperando resposta do adversário...");
+    }
+    public void lowerCharacter() {
+        while (true) {
+            System.out.println("Personagens disponíveis no tabuleiro:");
+            for (int i = 0; i < onBoardCharacters.size(); i++) {
+                System.out.println((i + 1) + ". " + onBoardCharacters.get(i));
+            }
+            System.out.println("\nInsira o número do personagem que deseja abaixar (ou 0 para parar): ");
+            int choice = scanner.nextInt();
+            scanner.nextLine();
+            if (choice == 0) {
+                break;
+            } else if (choice > 0 && choice <= onBoardCharacters.size()) {
+                System.out.println("Você abaixou o personagem: " + onBoardCharacters.remove(choice - 1));
+            } else {
+                System.out.println("Personagem inválido. Tente novamente.");
+            }
+        }
     }
 
     public static void main(String[] args) {
