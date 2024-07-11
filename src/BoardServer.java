@@ -3,7 +3,6 @@ import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 public class BoardServer {
 
@@ -11,9 +10,8 @@ public class BoardServer {
     private ServerSocket serverSocket;
     private List<PlayersSocketServer> clientes = new ArrayList<PlayersSocketServer>();
     private List<String> characters = Arrays.asList("Leah", "Abigail", "Sam", "Sebastian", "Robin", "Alex", "Junimo", "Prefeito Luis");
-    // Salva os personagens escolhidos por cada jogador
     private List<String> chosenCharacters = new ArrayList<>(Arrays.asList(null, null));
-    private int currentPlayerIndex = 0; // Jogador atual
+    private int currentPlayerIndex = 0;
 
     public void start() throws IOException {
         serverSocket = new ServerSocket(PORT);
@@ -22,12 +20,11 @@ public class BoardServer {
     }
 
     public void waitConnections() throws IOException {
-        while (clientes.size() < 2) { // Espera 2 jogadores se conectarem
+        while (clientes.size() < 2) {
             PlayersSocketServer socket = new PlayersSocketServer(serverSocket.accept());
             System.out.println("Cliente: " + socket.getRemoteSocketAddress() + " conectado!");
             clientes.add(socket);
             if (clientes.size() == 2) {
-                // Inicia o jogo após dois jogadores se conectarem
                 System.out.println("Dois jogadores conectados. Iniciando o jogo...");
                 for (int i = 0; i < clientes.size(); i++) {
                     int finalI = i;
@@ -60,7 +57,6 @@ public class BoardServer {
             }
         } else {
             sendMessagesToAll(socket, message);
-            // Alterna o jogador
             currentPlayerIndex = 1 - currentPlayerIndex;
         }
     }
@@ -87,5 +83,4 @@ public class BoardServer {
             e.printStackTrace();
         }
     }
-
 }
