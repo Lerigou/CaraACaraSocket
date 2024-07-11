@@ -2,45 +2,23 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.Scanner;
 
-public class BoardPlayer1 implements Runnable{
+public class BoardPlayer1 implements Runnable {
 
     private static final String HOST = "127.0.0.1";
     private PlayersSocketServer playersSocketServer;
     private Scanner scanner = new Scanner(System.in);
-    private String userName;
-    private String userChar;
     private boolean isMyTurn = true;
-    private boolean firstRound = true;
-
-    private String[] characters = {"Leah", "Abigail", "Sam", "Sebastian", "Robin", "Alex", "Junimo", "Prefeito Luis"};
+    private boolean hasAskedQuestion = false;
+    private boolean hasReceivedAnswer = false;
 
     public void start() throws IOException {
         playersSocketServer = new PlayersSocketServer(new Socket(HOST, BoardServer.PORT));
         System.out.println("Novo player conectado ao servidor.");
         new Thread(this).start();
-        configUser();
-        sendQuestion();
+        gameLoop();
     }
 
-    public void configUser(){
-        System.out.println("Bem vindo ao cara a cara da vila pelicanos!");
-        System.out.println("Insira seu nome de usuário: ");
-        userName = scanner.nextLine();
-
-
-        System.out.println("Escolha seu personagem:");
-        for (int i = 0; i < characters.length; i++) {
-            System.out.println((i + 1) + ". " + characters[i]);
-        }
-        int choice = scanner.nextInt();
-        userChar = characters[choice - 1];
-        scanner.nextLine();
-
-        System.out.println("Olá " + userName + "! Você escolheu o personagem " + userChar);
-    }
-
-    public synchronized void sendQuestion(){
-        String question, answer = "";
+    public synchronized void gameLoop() {
         while (true) {
             while (!isMyTurn) {
                 try {
@@ -51,33 +29,29 @@ public class BoardPlayer1 implements Runnable{
                 }
             }
 
-            if (firstRound) {
-                // Primeira rodada: envia apenas a pergunta
-                System.out.println("Insira a pergunta para o outro jogador: ");
-                question = scanner.nextLine();
-                playersSocketServer.sendQuestion(question);
-                firstRound = false;
+            if (hasReceivedAnswer) {
+                playerAction();
+            } else if (hasAskedQuestion) {
+                System.out.println("Aguardando resposta do outro jogador...");
             } else {
-                System.out.println("LEMBRETE: Você escolheu o personagem " + userChar + "\n");
-                // Rodadas subsequentes: primeiro responde a pergunta recebida
-                System.out.println("Insira a resposta para o outro jogador: ");
-                answer = scanner.nextLine();
-                playersSocketServer.sendQuestion(answer);
-
-                // Depois faz a própria pergunta
-                System.out.println("Insira a pergunta para o outro jogador: ");
-                question = scanner.nextLine();
-                playersSocketServer.sendQuestion(question);
+                sendQuestion();
             }
-
-//            if (question.equalsIgnoreCase("sair")) {
-//                break;
-//            }
 
             isMyTurn = false;
             notifyAll();
         }
+    }
 
+    public void sendQuestion() {
+        System.out.println("Insira a pergunta para o outro jogador: ");
+        String question = scanner.nextLine();
+        playersSocketServer.sendQuestion(question);
+        hasAskedQuestion = true;
+    }
+
+    public void playerAction() {
+        System.out.println("Você recebeu uma resposta do outro jogador. Escolha uma ação.");
+        hasReceivedAnswer = false;
     }
 
     public static void main(String[] args) {
@@ -92,10 +66,9 @@ public class BoardPlayer1 implements Runnable{
 
     @Override
     public void run() {
-        String question = "";
-        while((question = playersSocketServer.receiveQuestion()) != null) {
-            System.out.println("Pergunta do outro player: " + question);
-            // após receber a pergunta do outro jogador, ele informa que é a vez dele
+        String message;
+        while ((message = playersSocketServer.receiveQuestion()) != null) {
+            handleAnswer(message);
             synchronized (this) {
                 isMyTurn = true;
                 notifyAll();
@@ -103,11 +76,8 @@ public class BoardPlayer1 implements Runnable{
         }
     }
 
-    public String getUserName() {
-        return userName;
-    }
-
-    public String getUserChar() {
-        return userChar;
+    private void handleAnswer(String message) {
+        System.out.println("Resposta do outro jogador: " + message);
+        hasReceivedAnswer = true;
     }
 }
